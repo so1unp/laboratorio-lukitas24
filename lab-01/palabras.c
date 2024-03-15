@@ -4,9 +4,8 @@
 int main(int argc, char *argv[])
 {
     // Agregar código aquí.
-while(1){
 	char caracter;
-	caracter=getchar();
+	while ((caracter = getchar()) != EOF){
 	if(caracter!='\n'){
 		if(caracter==' '){
 			printf("\n");
