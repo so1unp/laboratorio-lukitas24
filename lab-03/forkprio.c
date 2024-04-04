@@ -12,5 +12,20 @@ int busywork(void)
 
 int main(int argc, char *argv[])
 {
+ int i;
+ int pid;
+   for(i=1;i<=atoi(argv[2]);i++){
+	pid=fork();
+	if(pid==0){
+	printf("soy hijo %d \n",pid);
+	break;
+}
+else{
+ printf("soy padre de: %d\n",pid);
+//sleep(5);
+}
+sleep(5);
+}
+sleep(5);
     exit(EXIT_SUCCESS);
 }
