@@ -106,3 +106,29 @@ sys_answer(void)
 
 return 42; 
 }
+
+int
+sys_getppid(void)
+{
+return myproc()->parent->pid;
+}
+
+
+int pscnt (void)
+{
+    struct proc *p;
+    int count = 0;
+
+    // Adquiere el bloqueo de procesos para iterar de manera segura sobre la lista de procesos
+    acquire(&ptable.lock);
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+    {
+        if (p->state != UNUSED) // Solo contar procesos en uso
+        {
+            count++;
+        }
+    }
+    release(&ptable.lock); // Libera el bloqueo de procesos
+
+    return count;
+}
