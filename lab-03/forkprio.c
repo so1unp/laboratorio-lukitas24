@@ -72,22 +72,22 @@ sigaction(SIGINT,&signalAction,NULL);
         }
 	else{
              	hijos[i]=pid;
-                 printf("soy padre de: %d\n",pid);
-        }
+                       }
 
 }//termina for
 
- printf("soy el padre nro %d\n", getpid());
-        int duerme=atoi(argv[2]);
+  
+      int duerme=atoi(argv[2]);
+ 	signalAction.sa_handler=matar;
+                sigaction(SIGINT,&signalAction,NULL);
+
         if(duerme>0){
                 
                 sleep((unsigned int)duerme);
                 matar();
               
         }else{
-                signalAction.sa_handler=matar;
-                sigaction(SIGINT,&signalAction,NULL);
-                pause();
+                    pause();
         }
     exit(EXIT_SUCCESS);
 }
