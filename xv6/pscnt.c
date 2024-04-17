@@ -2,29 +2,32 @@
 #include "user.h"
 #include "date.h"
 
-
-#define SYS_pscnt 25 
+#define NUM_CHILDREN 5
 
 int main() {
-    int num_processes_before, num_processes_after, i;
+int i;   
+ printf(1,"Número de procesos en ejecucuion: %d\n", pscnt());
+    
 
-    // Obtener el número de procesos antes de crear procesos hijos
-    num_processes_before = pscnt();
-    printf(1,"Número de procesos antes de crear hijos: %d\n", num_processes_before);
 
     // Crear procesos hijos
-    for (i = 0; i < 5; i++) {
-        if (fork() == 0) { // Proceso hijo
-            // En el proceso hijo, solo imprimir un mensaje y salir
-            printf(1,"Proceso hijo creado\n");
+    for (i = 0; i < NUM_CHILDREN; i++) {
+        if (fork() == 0) {
+            // Proceso hijo
+            printf(1, "Soy el proceso hijo %d con PID %d\n", i+1, getpid());
             exit();
         }
     }
+     printf(1, "Número de procesos en el sistema: %d\n", pscnt());
+ 
+    // Esperar a que todos los hijos terminen
+    for (i = 0; i < NUM_CHILDREN; i++) {
+        wait();
+}
 
-    // Obtener el número de procesos después de crear procesos hijos
-    num_processes_after = pscnt();
-    printf(1,"Número de procesos después de crear hijos: %d\n", num_processes_after);
+ printf(1,"Número de procesos en ejecucuion: %d\n", pscnt());
 
-    return 0;
+
+    exit();
 }
 

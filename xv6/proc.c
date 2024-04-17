@@ -532,3 +532,19 @@ procdump(void)
     cprintf("\n");
   }
 }
+
+int sys_pscnt (void)
+{
+   int count = 0;
+   int i;
+   for (i =0; i < NPROC; i++)
+    {
+     	if (ptable.proc[i].state != UNUSED) 
+        {
+            count++;
+        }
+    }
+   
+    return count;
+}
+

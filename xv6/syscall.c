@@ -133,7 +133,7 @@ static int (*syscalls[])(void) = {
 [SYS_trace]   sys_trace,
 [SYS_answer]  sys_answer,
 [SYS_getppid] sys_getppid,
-[SYS_pscnt] sys_pscnt
+[SYS_pscnt]   sys_pscnt
 };
 
 extern int trace;
@@ -163,7 +163,7 @@ static char* syscalls_names[] = {
 [SYS_trace]   "sys_trace",
 [SYS_answer]  "sys_answer",
 [SYS_getppid] "sys_getppid",
-[SYS_pscnt] "sys_pscnt"
+[SYS_pscnt]   "sys_pscnt"
 };
 
 void
