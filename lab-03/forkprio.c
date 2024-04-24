@@ -17,6 +17,7 @@ int busywork(void)
 }
 
 void terminarHijo(int signal){
+(void)signal;
          struct rusage usage;
         getrusage(RUSAGE_SELF,&usage);
                  printf("Child %d (nice %2d):\t%3li\n",getpid(),getpriority(PRIO_PROCESS,0),usage.ru_utime.tv_sec+usage.ru_stime.tv_sec);

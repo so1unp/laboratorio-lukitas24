@@ -3,9 +3,17 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/wait.h>
-
+#include <pthread.h>
+ 
 void test_fork(int count);
 void test_thread(int count);
+
+void *funcionDelHilo(void* p){
+pthread_exit(NULL);
+
+}
+
+
 
 int main(int argc, char *argv[]) 
 {
@@ -77,9 +85,12 @@ void test_fork(int count)
 void test_thread(int count) 
 {
     int j;
-    
+    pthread_t id;
     for (j = 0; j < count; j++) {
+	pthread_create(&id,NULL,&funcionDelHilo,NULL);
         // COMPLETAR: CREAR UN HILO
+	pthread_join(id,NULL);	
         // COMPLETAR: ESPERAR POR HILO RECIEN CREADO
     }
 }
+
