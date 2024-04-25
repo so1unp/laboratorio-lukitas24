@@ -1,42 +1,54 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
-#include <unistd.h>
 
-int cantidadSegundos=0;
+// Variable global que incrementan los hilos.
+static long glob = 0;
 
-void *funcionDelHilo(void* p){
- long id = (long)p;
- printf("Soy el hilo (%ld) y voy a dormir %d segundos\n", id, cantidadSegundos);
- int tiempoDormido=rand() % (cantidadSegundos+1);
-    sleep(tiempoDormido); 
-    printf("El hilo (%ld) ha terminado de dormir.\n", id);
-    pthread_exit(NULL);
+void* increment_glob(void* p)
+{
+    int loc;
+    long loops=(long)p;
+    long j;
+    // incrementa glob
+    for (j = 0; j < loops; j++) {
+        loc = glob;
+        loc++;
+	glob = loc;
+
+    }
 }
 
-
-
-
-
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
-    if(argc!=3){
-        printf("formato incorrecto");
+    long loops;
+
+    // Controla numero de argumentos.
+    if (argc != 2) {
+        fprintf(stderr, "Uso: %s ciclos\n", argv[0]);
         exit(EXIT_FAILURE);
-        }
-    long i;
-    cantidadSegundos=atoi(argv[2]);
-    int cantidadDeHilos=atoi(argv[1]);
-
-
-    pthread_t hilos[cantidadDeHilos];
-
-    for(i=0;i < cantidadDeHilos;i++){
-        pthread_create(&hilos[i],NULL,funcionDelHilo,(void *) i);    
     }
 
-    for(i=0;i < cantidadDeHilos;i++){
-        pthread_join(hilos[i],NULL);
+    loops = atoi(argv[1]);
+
+    // Verifica argumentos.
+    if (loops < 1) {
+        fprintf(stderr, "Error: ciclos debe ser mayor a cero.\n");
+        exit(EXIT_FAILURE);
     }
+    
+    pthread_t hilo1;
+    pthread_t hilo2;
+    pthread_create(&hilo1,NULL,increment_glob,(void *) loops);
+    pthread_create(&hilo2,NULL,increment_glob,(void *) loops);
+
+
+    printf("%ld\n", glob);
+
     exit(EXIT_SUCCESS);
 }
+
+
+
+
+
