@@ -41,10 +41,14 @@ void
 thread_schedule(void)
 {
   thread_p t;
-
+  int indice;
+  int i;
   /* Find another runnable thread. */
   next_thread = 0;
-  for (t = all_thread; t < all_thread + MAX_THREAD; t++) {
+
+  for (i = 1; i <  MAX_THREAD; i++) {
+   indice= (((current_thread-all_thread)/4)+i)%MAX_THREAD;
+   t=&all_thread[indice];
     if (t->state == RUNNABLE && t != current_thread) {
       next_thread = t;
       break;
