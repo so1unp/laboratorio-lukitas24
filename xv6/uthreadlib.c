@@ -16,7 +16,7 @@ struct thread {
 };
 
 typedef struct thread thread_t, *thread_p;
-
+static int last_index = 0; // Variable estática para rastrear la última posición visitada
 static thread_t all_thread[MAX_THREAD];
 
 thread_p  current_thread;
@@ -46,11 +46,14 @@ thread_schedule(void)
   /* Find another runnable thread. */
   next_thread = 0;
 
-  for (i = 1; i <  MAX_THREAD; i++) {
-   indice= (((current_thread-all_thread)/4)+i)%MAX_THREAD;
-   t=&all_thread[indice];
-    if (t->state == RUNNABLE && t != current_thread) {
+  for (i = 1; i < MAX_THREAD; i++)
+  {
+    indice = (last_index + i) % MAX_THREAD;
+    t = &all_thread[indice];
+    if (t->state == RUNNABLE && t != current_thread)
+    {
       next_thread = t;
+      last_index = indice; // Actualiza la última posición visitada
       break;
     }
   }
@@ -62,7 +65,7 @@ thread_schedule(void)
 
   if (next_thread == 0) {
     printf(2, "thread_schedule: no runnable threads\n");
-    exit();
+    next_thread = &all_thread[0];
   }
 
   if (current_thread != next_thread) {         /* switch threads?  */

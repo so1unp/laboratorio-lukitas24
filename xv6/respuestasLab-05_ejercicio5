@@ -1,0 +1,4 @@
+2) Con ejecutar popa basta ya que la instrucción restablece todo el contexto del hilo que se eligio para ejecutar y la cpu lo ejecuta
+3) Se implementa una política de planificación colaborativa,es decir, cada hilo ejecuta un poco y le cede la cpu a otro hilo.
+4) Si se ejecutan mas de dos hilos, siempre los primeros dos seran ejecutados hasta que estos terminen porque el planificador recorre el array de hilos desde el principio
+
