@@ -23,6 +23,9 @@ struct params {
     int wait_cons;
     int items;
     struct buffer* buf;
+    pthread_mutex_t mutex;
+    sem_t llenos;
+    sem_t vacio;
 } params_t;
 
 /* Productor */
@@ -30,10 +33,15 @@ static void* producer(void *p)
 {
     int i = 0;
 
-    struct params *params = (struct params*) p;
+  struct params *params = (struct params*) p;
 
     for (i = 0; i < params->items; i++) {
+
+        sem_wait(&params->vacio);
+        pthread_mutex_lock(&params->mutex);
         params->buf->buf[i % params->buf->size] = i;
+        pthread_mutex_unlock(&params->mutex);
+        sem_post(&params->llenos);
         // Espera una cantidad aleatoria de microsegundos.
         usleep(rand() % params->wait_prod);
     }
@@ -45,14 +53,17 @@ static void* producer(void *p)
 static void* consumer(void *p)
 {
     int i;
-
     struct params *params = (struct params*) p;
 
-    // Reserva memoria para guardar lo que lee el consumidor.
     int *reader_results = (int*) malloc(sizeof(int)*params->items);
+    // Reserva memoria para guardar lo que lee el consumidor.
 
     for (i = 0; i < params->items; i++) {
+        sem_wait(&params->llenos);
+        pthread_mutex_lock(&params->mutex);
         reader_results[i] = params->buf->buf[i % params->buf->size];
+        pthread_mutex_unlock(&params->mutex);
+        sem_post(&params->vacio);
         // Espera una cantidad aleatoria de microsegundos.
         usleep(rand() % params->wait_prod);
     }
@@ -61,7 +72,7 @@ static void* consumer(void *p)
     for (i = 0; i < params->items; i++) {
         printf("%d ", reader_results[i]);
     }
-    printf("\n");
+ printf("\n");
 
     pthread_exit(0);
 }
@@ -77,7 +88,7 @@ int main(int argc, char** argv)
         fprintf(stderr, "\titems:\tnúmero de items a producir/consumir.\n");
         fprintf(stderr, "\twaitp:\tnúmero de microsegundos que espera el productor.\n");
         fprintf(stderr, "\twaitc:\tnúmero de microsegundos que espera el consumidor.\n");
-        exit(EXIT_FAILURE);
+   exit(EXIT_FAILURE);
     }
 
     struct buffer *buf;
@@ -93,8 +104,7 @@ int main(int argc, char** argv)
         fprintf(stderr, "bufsize tiene que ser mayor que cero.\n");
         exit(EXIT_FAILURE);
     }
-
-    // Crea el buffer
+ // Crea el buffer
     buf->buf = (int*) malloc(sizeof(int) * buf->size);
     if (buf->buf == NULL) {
         perror("malloc");
@@ -108,9 +118,10 @@ int main(int argc, char** argv)
         perror("malloc");
         exit(EXIT_FAILURE);
     }
-
     params->buf = buf;
 
+    sem_init(&params->llenos, 0, 0);
+    sem_init(&params->vacio,0,params->buf->size);
     // Cantidad de items a producir.
     params->items = atoi(argv[2]);
     if (params->items <= 0) {
@@ -123,13 +134,15 @@ int main(int argc, char** argv)
         fprintf(stderr, "wait-prod tiene que ser mayor que cero.\n");
         exit(EXIT_FAILURE);
     }
-
-    params->wait_cons = atoi(argv[4]);
+  params->wait_cons = atoi(argv[4]);
     if (params->wait_cons <= 0) {
         fprintf(stderr, "cons-wait tiene que ser mayor que cero.\n");
         exit(EXIT_FAILURE);
     }
 
+
+
+    pthread_mutex_init(&params->mutex,NULL);
     // Inicializa semilla para números pseudo-aleatorios.
     srand(getpid());
 
@@ -137,6 +150,12 @@ int main(int argc, char** argv)
     pthread_create(&producer_t, NULL, producer, params);
     pthread_create(&consumer_t, NULL, consumer, params);
 
+
+    sem_destroy(&params->vacio);
+    sem_destroy(&params->llenos);
+    pthread_mutex_destroy(&params->mutex);
     // Mi trabajo ya esta hecho ...
     pthread_exit(NULL);
 }
+
+
