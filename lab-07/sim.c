@@ -110,22 +110,104 @@ void imprimirMemorias(ram_t ram, memSecundaria_t memSecundaria)
     printf("\n");
 }
 
-int gestionarProcesoEnMemoria(int modo, int pid, int pagina, process_t procesos[], ram_t *ram)
+int gestionarProcesoEnMemoria(int modo, int pid, int pagina, process_t procesos[], ram_t *ram, memSecundaria_t *memSecundaria)
 {
-    if (modo == 'l' && procesos[pid - 1].paginas[pagina].memoria == 1)
+    if (modo == 'l')
     {
-        printf("Actualizando lru_indice de pagina en RAM: Proceso %d, Pagina %d, lru_indice %d -> %d\n", pid, pagina, procesos[pid - 1].paginas[pagina].lru_indice, lru_index);
-        procesos[pid - 1].paginas[pagina].lru_indice = lru_index;
-        ram->paginas[procesos[pid - 1].paginas[pagina].nroEnMemoria].lru_indice = lru_index;
-        lru_index++;
-        return 0; // Indica que no se debe continuar con la siguiente iteración
+        if (procesos[pid - 1].paginas[pagina].memoria == 1)
+        {
+
+            printf("Actualizando lru_indice de pagina en RAM: Proceso %d, Pagina %d, lru_indice %d -> %d\n", pid, pagina, procesos[pid - 1].paginas[pagina].lru_indice, lru_index);
+            procesos[pid - 1].paginas[pagina].lru_indice = lru_index;
+            ram->paginas[procesos[pid - 1].paginas[pagina].nroEnMemoria].lru_indice = lru_index;
+            lru_index++;
+            return 0; // Indica que no se debe continuar con la siguiente iteración
+        }
+        if (procesos[pid - 1].paginas[pagina].memoria == 2)
+        {
+            int marcoSwap = procesos[pid - 1].paginas[pagina].nroEnMemoria;
+            printf("La página %d del Proceso %d está en memoria secundaria en el marco %d\n", pagina, pid, marcoSwap);
+
+            // Encontrar la página en RAM con el menor lru_indice
+            int marcoRam = 0;
+            int minLruIndice = ram->paginas[0].lru_indice;
+            for (int i = 1; i < FISICA; i++)
+            {
+                if (ram->paginas[i].lru_indice < minLruIndice)
+                {
+                    minLruIndice = ram->paginas[i].lru_indice;
+                    marcoRam = i;
+                }
+            }
+            printf("Página a reemplazar en RAM: Proceso %d, Pagina %d, marco %d, lru_indice %d\n", ram->paginas[marcoRam].pid, ram->paginas[marcoRam].indice, marcoRam, minLruIndice);
+
+
+            // Guarda la página en Swap
+            pagina_t paginaEnSwap = memSecundaria->paginas[marcoSwap];
+            pagina_t paginaEnRAM = ram->paginas[marcoRam];
+
+            printf("Moviendo de MemSecundaria a RAM: Proceso %d, Pagina %d de marco %d en memoria secundaria a marco %d en RAM\n", pid, pagina, marcoSwap, marcoRam);
+
+            // Intercambiamos las páginas
+            memSecundaria->paginas[marcoSwap] = paginaEnRAM;
+            memSecundaria->paginas[marcoSwap].memoria = 2;
+            procesos[paginaEnRAM.pid - 1].paginas[paginaEnRAM.indice].nroEnMemoria = marcoSwap;
+            procesos[paginaEnRAM.pid - 1].paginas[paginaEnRAM.indice].memoria = 2;
+
+            printf("Guardando en memoria secundaria: Proceso %d, Pagina %d, lru_indice %d\n", paginaEnRAM.pid, paginaEnRAM.indice, paginaEnRAM.lru_indice);
+
+            // Movemos la página desde swap a RAM
+            ram->paginas[marcoRam] = paginaEnSwap;
+            ram->paginas[marcoRam].memoria = 1;
+            ram->paginas[marcoRam].lru_indice = lru_index;
+            procesos[pid - 1].paginas[pagina].nroEnMemoria = marcoRam;
+            procesos[pid - 1].paginas[pagina].memoria = 1;
+            procesos[pid - 1].paginas[pagina].lru_indice = lru_index;
+
+            lru_index++;
+            return 0; // Indica que no se debe continuar con la siguiente iteración
+        }
     }
-    else if (modo == 'f' && procesos[pid - 1].paginas[pagina].memoria == 1)
+    if (modo == 'f')
     {
-        printf("La pagina:%d del Proceso: %d ya se encuentra en la memoria\n", pagina, pid);
-        return 0; // Indica que no se debe continuar con la siguiente iteración
+        if (procesos[pid - 1].paginas[pagina].memoria == 1)
+        {
+
+            printf("La pagina:%d del Proceso: %d ya se encuentra en la memoria\n", pagina, pid);
+            return 0;
+        }
+        if (procesos[pid - 1].paginas[pagina].memoria == 2)
+        {
+            int marcoSwap = procesos[pid - 1].paginas[pagina].nroEnMemoria;
+            int marcoRam = ram->fifo_index;
+            printf("Moviendo de MemSecundaria a RAM: Proceso %d, Pagina %d de marco %d en memoria secundaria a marco %d en RAM\n", pid, pagina, marcoSwap, marcoRam);
+            pagina_t paginaEnSwap = memSecundaria->paginas[marcoSwap]; // Sacamos la página que estaba en RAM (FIFO) y la ponemos en swap
+            pagina_t paginaEnRAM = ram->paginas[marcoRam];             // Guarda la página en Swap
+            // Intercambiamos las páginas
+            memSecundaria->paginas[marcoSwap] = paginaEnRAM;
+            memSecundaria->paginas[marcoSwap].memoria = 2;
+            procesos[paginaEnRAM.pid - 1].paginas[paginaEnRAM.indice].nroEnMemoria = marcoSwap;
+            procesos[paginaEnRAM.pid - 1].paginas[paginaEnRAM.indice].memoria = 2;
+            // Movemos la página desde swap a RAM
+            ram->paginas[marcoRam] = paginaEnSwap;
+            ram->paginas[marcoRam].memoria = 1;
+            procesos[pid - 1].paginas[pagina].nroEnMemoria = marcoRam;
+            procesos[pid - 1].paginas[pagina].memoria = 1;
+            ram->fifo_index = (ram->fifo_index + 1) % FISICA;
+            return 0;
+        }
     }
-    return 1; // Indica que se debe continuar y se debe seguir con la lógica del programa
+    return 1;
+}
+
+void verificarMemoriaSecundaria(memSecundaria_t *memSecundaria) {
+    for (int i = 0; i < SWAP; i++) {
+        if (memSecundaria->paginas[i].pid == -1) {
+            return;
+        }
+    }
+    printf("Error: Memoria secundaria llena.\n");
+    exit(EXIT_FAILURE);
 }
 
 void inicializarProcesoSiEsNecesario(process_t procesos[], int pid)
@@ -178,11 +260,17 @@ int main(int argc, char *argv[])
     int paginaRemplazo;
     while (scanf("%d\n%d", &pid, &pagina) != EOF)
     {
+        if(pid>MAX_PROCESOS-1 || pagina>VIRTUAL-1){
+            printf("No se soporta el proceso %d pagina %d. procesos rango: 1-100. paginas rango:0-15 \n",pid,pagina);
+            exit(EXIT_FAILURE);
+        }
+        verificarMemoriaSecundaria(&memSecundaria);
+
         encontroHueco = 0;
         paginaRemplazo = 0;
         inicializarProcesoSiEsNecesario(procesos, pid);
 
-        if (gestionarProcesoEnMemoria(modo, pid, pagina, procesos, &ram) == 1)
+        if (gestionarProcesoEnMemoria(modo, pid, pagina, procesos, &ram, &memSecundaria) == 1)
         {
             // accedo a la ram
             for (i = 0; i < FISICA; i++)
@@ -220,10 +308,9 @@ int main(int argc, char *argv[])
                             break;
                         }
                     }
-                    // si esta todo lleno tiene que terminar el programa y no deberia hacer nada
                     ram.paginas[ram.fifo_index] = procesos[pid - 1].paginas[pagina];
                     printf("Cargando en RAM: Proceso %d, Pagina %d en marco %d\n", pid, pagina, ram.fifo_index);
-                    ram.fifo_index = (ram.fifo_index + 1) % FISICA; 
+                    ram.fifo_index = (ram.fifo_index + 1) % FISICA;
                 }
                 if (modo == 'l')
                 {
@@ -251,6 +338,8 @@ int main(int argc, char *argv[])
                             memSecundaria.paginas[i] = ram.paginas[paginaRemplazo];
                             memSecundaria.paginas[i].memoria = 2;
                             procesos[ram.paginas[paginaRemplazo].pid - 1].paginas[ram.paginas[paginaRemplazo].indice].memoria = 2;
+                            procesos[ram.paginas[paginaRemplazo].pid - 1].paginas[ram.paginas[paginaRemplazo].indice].nroEnMemoria = i;
+
                             printf("Moviendo de RAM a MemSecundaria: Proceso %d, Pagina %d de marco %d a marco %d en swap, lru_indice %d\n", ram.paginas[paginaRemplazo].pid, ram.paginas[paginaRemplazo].indice, paginaRemplazo, i, ram.paginas[paginaRemplazo].lru_indice);
                             break;
                         }
