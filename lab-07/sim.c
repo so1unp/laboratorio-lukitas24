@@ -131,7 +131,8 @@ int gestionarProcesoEnMemoria(int modo, int pid, int pagina, process_t procesos[
             // Encontrar la página en RAM con el menor lru_indice
             int marcoRam = 0;
             int minLruIndice = ram->paginas[0].lru_indice;
-            for (int i = 1; i < FISICA; i++)
+	    int i;
+            for (i = 1; i < FISICA; i++)
             {
                 if (ram->paginas[i].lru_indice < minLruIndice)
                 {
@@ -201,7 +202,8 @@ int gestionarProcesoEnMemoria(int modo, int pid, int pagina, process_t procesos[
 }
 
 void verificarMemoriaSecundaria(memSecundaria_t *memSecundaria) {
-    for (int i = 0; i < SWAP; i++) {
+     int i;
+    for (i = 0; i < SWAP; i++) {
         if (memSecundaria->paginas[i].pid == -1) {
             return;
         }
@@ -212,11 +214,12 @@ void verificarMemoriaSecundaria(memSecundaria_t *memSecundaria) {
 
 void inicializarProcesoSiEsNecesario(process_t procesos[], int pid)
 {
+   int i;
     if (procesos[pid - 1].activo == -1)
     {
         procesos[pid - 1].activo = 1;
         procesos[pid - 1].pid = pid;
-        for (int i = 0; i < VIRTUAL; i++)
+        for (i = 0; i < VIRTUAL; i++)
         {
             procesos[pid - 1].paginas[i].pid = pid;
             procesos[pid - 1].paginas[i].nroEnMemoria = -1;
